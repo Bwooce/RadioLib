@@ -1,0 +1,25 @@
+/ {
+    aliases {
+        radio-spi = &spi1;
+    };
+
+    radio_pins: radio_pins {
+        compatible = "gpio-keys";
+        radio_cs: radio_cs {
+            gpios = <&gpio1 10 GPIO_ACTIVE_LOW>;
+        };
+        radio_irq: radio_irq {
+            gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;
+        };
+        radio_rst: radio_rst {
+            gpios = <&gpio1 12 GPIO_ACTIVE_HIGH>;
+        };
+        radio_busy: radio_busy {
+            gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
+        };
+    };
+};
+
+&spi1 {
+    status = "okay";
+};
