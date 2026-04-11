@@ -13,63 +13,63 @@ static const struct gpio_dt_spec busy_gpio = GPIO_DT_SPEC_GET(DT_NODELABEL(radio
 
 // Zephyr SPI config
 static struct spi_config spi_cfg = {
-    .frequency = 8000000,
-    .operation = SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | SPI_TRANSFER_MSB,
-    .slave = 0,
-    .cs = {
-        .gpio = cs_gpio,
-        .delay = 0,
-    }
+  .frequency = 8000000,
+  .operation = SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | SPI_TRANSFER_MSB,
+  .slave = 0,
+  .cs = {
+    .gpio = cs_gpio,
+    .delay = 0,
+  }
 };
 
 int main(void) {
-    printk("Starting RadioLib Zephyr Example\n");
+  printk("Starting RadioLib Zephyr Example\n");
 
-    if (!device_is_ready(SPI_DEV)) {
-        printk("Error: SPI device not ready\n");
-        return -1;
-    }
+  if(!device_is_ready(SPI_DEV)) {
+    printk("Error: SPI device not ready\n");
+    return -1;
+  }
 
-    // Initialize HAL
-    ZephyrHal* hal = new ZephyrHal(SPI_DEV, &spi_cfg);
+  // Initialize HAL
+  ZephyrHal* hal = new ZephyrHal(SPI_DEV, &spi_cfg);
 
-    // Register pins with the HAL
-    uint32_t cs_pin = hal->addPin(&cs_gpio);
-    uint32_t irq_pin = hal->addPin(&irq_gpio);
-    uint32_t rst_pin = hal->addPin(&rst_gpio);
-    uint32_t busy_pin = hal->addPin(&busy_gpio);
+  // Register pins with the HAL
+  uint32_t cs_pin = hal->addPin(&cs_gpio);
+  uint32_t irq_pin = hal->addPin(&irq_gpio);
+  uint32_t rst_pin = hal->addPin(&rst_gpio);
+  uint32_t busy_pin = hal->addPin(&busy_gpio);
 
-    if (cs_pin == 0xFFFFFFFF || irq_pin == 0xFFFFFFFF) {
-        printk("Error: Failed to register GPIO pins\n");
-        return -1;
-    }
+  if(cs_pin == 0xFFFFFFFF || irq_pin == 0xFFFFFFFF) {
+    printk("Error: Failed to register GPIO pins\n");
+    return -1;
+  }
 
-    // Create the radio module
-    SX1262 radio = new Module(hal, cs_pin, irq_pin, rst_pin, busy_pin);
+  // Create the radio module
+  SX1262 radio = new Module(hal, cs_pin, irq_pin, rst_pin, busy_pin);
 
-    printk("Initializing SX1262...\n");
-    int state = radio.begin();
+  printk("Initializing SX1262...\n");
+  int state = radio.begin();
 
-    if (state == RADIOLIB_ERR_NONE) {
-        printk("SX1262 init success!\n");
+  if(state == RADIOLIB_ERR_NONE) {
+    printk("SX1262 init success!\n");
+  } else {
+    printk("SX1262 init failed, code %d\n", state);
+    return -1;
+  }
+
+  // Main loop
+  while(true) {
+    printk("Transmitting packet...\n");
+    state = radio.transmit("Hello from Zephyr!");
+
+    if(state == RADIOLIB_ERR_NONE) {
+      printk("Transmit success!\n");
     } else {
-        printk("SX1262 init failed, code %d\n", state);
-        return -1;
+      printk("Transmit failed, code %d\n", state);
     }
 
-    // Main loop
-    while (true) {
-        printk("Transmitting packet...\n");
-        state = radio.transmit("Hello from Zephyr!");
+    k_msleep(2000);
+  }
 
-        if (state == RADIOLIB_ERR_NONE) {
-            printk("Transmit success!\n");
-        } else {
-            printk("Transmit failed, code %d\n", state);
-        }
-
-        k_msleep(2000);
-    }
-
-    return 0;
+  return 0;
 }

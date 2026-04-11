@@ -56,8 +56,8 @@
  * to recover this struct from the gpio_callback pointer.
  */
 struct zephyr_hal_pin_irq {
-    struct gpio_callback cb;  /**< Zephyr GPIO callback struct */
-    void (*fn)(void);         /**< RadioLib interrupt callback */
+  struct gpio_callback cb;    /**< Zephyr GPIO callback struct */
+  void (*fn)(void);           /**< RadioLib interrupt callback */
 };
 
 /**
