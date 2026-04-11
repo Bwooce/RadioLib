@@ -1,7 +1,7 @@
 #include "ZephyrHal.h"
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(ZephyrHal, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(ZephyrHal, LOG_LEVEL_INF);
 
 // gpio ISR — recovers the per-pin irq context via CONTAINER_OF,
 // then calls the RadioLib callback. No global singleton needed.
