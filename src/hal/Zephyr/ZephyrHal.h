@@ -46,7 +46,7 @@
 #define HAL_PIN_FALLING 2
 
 /** @brief Maximum number of GPIO pins that can be registered with the HAL */
-#define MAX_HAL_PINS 10
+#define MAX_HAL_PINS 20
 
 /**
  * @brief Per-pin interrupt context.
@@ -139,6 +139,14 @@ class ZephyrHal : public RadioLibHal {
     /**
      * @brief Look up a GPIO spec by logical pin ID.
      * @return Pointer to gpio_dt_spec, or nullptr if pin ID is out of range.
+     */
+    const struct gpio_dt_spec* getGpio(uint32_t pin);
+};
+
+#endif // ZEPHYR_HAL_H
+
+YR_HAL_H
+pio_dt_spec, or nullptr if pin ID is out of range.
      */
     const struct gpio_dt_spec* getGpio(uint32_t pin);
 };

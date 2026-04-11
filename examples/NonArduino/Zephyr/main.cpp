@@ -30,22 +30,23 @@ int main(void) {
     return -1;
   }
 
-  // Initialize HAL
-  ZephyrHal* hal = new ZephyrHal(SPI_DEV, &spi_cfg);
+  // Initialize HAL on the stack to avoid RTOS heap usage
+  ZephyrHal hal(SPI_DEV, &spi_cfg);
 
   // Register pins with the HAL
-  uint32_t cs_pin = hal->addPin(&cs_gpio);
-  uint32_t irq_pin = hal->addPin(&irq_gpio);
-  uint32_t rst_pin = hal->addPin(&rst_gpio);
-  uint32_t busy_pin = hal->addPin(&busy_gpio);
+  uint32_t cs_pin = hal.addPin(&cs_gpio);
+  uint32_t irq_pin = hal.addPin(&irq_gpio);
+  uint32_t rst_pin = hal.addPin(&rst_gpio);
+  uint32_t busy_pin = hal.addPin(&busy_gpio);
 
-  if(cs_pin == 0xFFFFFFFF || irq_pin == 0xFFFFFFFF) {
+  if(cs_pin == RADIOLIB_NC || irq_pin == RADIOLIB_NC) {
     printk("Error: Failed to register GPIO pins\n");
     return -1;
   }
 
-  // Create the radio module
-  SX1262 radio = new Module(hal, cs_pin, irq_pin, rst_pin, busy_pin);
+  // Create the radio module on the stack
+  Module mod(&hal, cs_pin, irq_pin, rst_pin, busy_pin);
+  SX1262 radio(&mod);
 
   printk("Initializing SX1262...\n");
   int state = radio.begin();

@@ -208,6 +208,28 @@ void ZephyrHal::spiTransfer(uint8_t* out, size_t len, uint8_t* in) {
 }
 
 void ZephyrHal::spiEndTransaction() {
+  k_mutex_unlock(&_spi_mutex);
+}
+
+void ZephyrHal::spiEnd() {
+}
+nd() {
+}
+"SPI RX:");
+    }
+  }
+}
+
+void ZephyrHal::spiEndTransaction() {
+}
+
+void ZephyrHal::spiEnd() {
+}
+}
+  }
+}
+
+void ZephyrHal::spiEndTransaction() {
 }
 
 void ZephyrHal::spiEnd() {
