@@ -81,7 +81,7 @@ class ZephyrHal : public RadioLibHal {
      * @brief Register a GPIO pin with the HAL.
      * @param dt_spec Pointer to a Zephyr gpio_dt_spec (must remain valid for
      *                the lifetime of the HAL — typically a static DTS macro).
-     * @return Logical pin ID (0, 1, 2...) to pass to RadioLib, or 0xFFFFFFFF
+     * @return Logical pin ID (0, 1, 2...) to pass to RadioLib, or RADIOLIB_NC
      *         on error (max pins exceeded or GPIO not ready).
      */
     uint32_t addPin(const struct gpio_dt_spec* dt_spec);
@@ -104,6 +104,10 @@ class ZephyrHal : public RadioLibHal {
     void delay(RadioLibTime_t ms) override;
     void delayMicroseconds(RadioLibTime_t us) override;
     RadioLibTime_t millis() override;
+    /**
+     * @note Resolution is tied to the Zephyr system tick rate
+     *       (e.g., 30.5 µs if CONFIG_SYS_CLOCK_TICKS_PER_SEC=32768).
+     */
     RadioLibTime_t micros() override;
     ///@}
 
@@ -131,6 +135,7 @@ class ZephyrHal : public RadioLibHal {
   private:
     const struct device* _spi_dev;
     struct spi_config _spi_cfg;
+    struct k_mutex _spi_mutex;
 
     const struct gpio_dt_spec* _pins[MAX_HAL_PINS];
     struct zephyr_hal_pin_irq _irqs[MAX_HAL_PINS];
@@ -140,15 +145,7 @@ class ZephyrHal : public RadioLibHal {
      * @brief Look up a GPIO spec by logical pin ID.
      * @return Pointer to gpio_dt_spec, or nullptr if pin ID is out of range.
      */
-    const struct gpio_dt_spec* getGpio(uint32_t pin);
-};
-
-#endif // ZEPHYR_HAL_H
-
-YR_HAL_H
-pio_dt_spec, or nullptr if pin ID is out of range.
-     */
-    const struct gpio_dt_spec* getGpio(uint32_t pin);
+    const struct gpio_dt_spec * getGpio(uint32_t pin) const;
 };
 
 #endif // ZEPHYR_HAL_H

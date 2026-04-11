@@ -18,6 +18,8 @@ ZephyrHal::ZephyrHal(const struct device* spi_dev, struct spi_config* spi_cfg)
   : RadioLibHal(HAL_PIN_INPUT, HAL_PIN_OUTPUT, HAL_PIN_LOW, HAL_PIN_HIGH, HAL_PIN_RISING, HAL_PIN_FALLING),
   _spi_dev(spi_dev) {
 
+  k_mutex_init(&_spi_mutex);
+
   /* Clone the SPI config so we can strip CS — RadioLib manages CS
    * manually via its own digitalWrite calls. */
   _spi_cfg = *spi_cfg;
@@ -33,22 +35,29 @@ ZephyrHal::~ZephyrHal() {
 }
 
 uint32_t ZephyrHal::addPin(const struct gpio_dt_spec* dt_spec) {
+  // Check for existing registration to prevent array exhaustion
+  for(uint32_t i = 0; i < _pin_count; i++) {
+    if(_pins[i]->port == dt_spec->port && _pins[i]->pin == dt_spec->pin) {
+      return i;
+    }
+  }
+
   if(_pin_count >= MAX_HAL_PINS) {
     LOG_ERR("Max HAL pins exceeded!");
-    return 0xFFFFFFFF;
+    return RADIOLIB_NC;
   }
 
   if(!gpio_is_ready_dt(dt_spec)) {
     LOG_ERR("GPIO %s pin %d is not ready — rejecting", dt_spec->port->name, dt_spec->pin);
-    return 0xFFFFFFFF;
+    return RADIOLIB_NC;
   }
 
   _pins[_pin_count] = dt_spec;
   return _pin_count++;
 }
 
-const struct gpio_dt_spec * ZephyrHal::getGpio(uint32_t pin) {
-  if(pin >= _pin_count) {
+const struct gpio_dt_spec * ZephyrHal::getGpio(uint32_t pin) const {
+  if(pin == RADIOLIB_NC || pin >= _pin_count) {
     return nullptr;
   }
   return _pins[pin];
@@ -67,6 +76,10 @@ void ZephyrHal::pinMode(uint32_t pin, uint32_t mode) {
    * SPI chip select and reset signaling.
    */
   gpio_flags_t dir = (mode == HAL_PIN_OUTPUT) ? GPIO_OUTPUT : GPIO_INPUT;
+
+  // Preserve pull-up/pull-down flags defined in the devicetree overlay
+  dir |= (dt->dt_flags & (GPIO_PULL_UP | GPIO_PULL_DOWN));
+
   gpio_pin_configure(dt->port, dt->pin, dir);
 }
 
@@ -178,6 +191,7 @@ void ZephyrHal::spiBegin() {
 }
 
 void ZephyrHal::spiBeginTransaction() {
+  k_mutex_lock(&_spi_mutex, K_FOREVER);
 }
 
 void ZephyrHal::spiTransfer(uint8_t* out, size_t len, uint8_t* in) {
@@ -209,27 +223,6 @@ void ZephyrHal::spiTransfer(uint8_t* out, size_t len, uint8_t* in) {
 
 void ZephyrHal::spiEndTransaction() {
   k_mutex_unlock(&_spi_mutex);
-}
-
-void ZephyrHal::spiEnd() {
-}
-nd() {
-}
-"SPI RX:");
-    }
-  }
-}
-
-void ZephyrHal::spiEndTransaction() {
-}
-
-void ZephyrHal::spiEnd() {
-}
-}
-  }
-}
-
-void ZephyrHal::spiEndTransaction() {
 }
 
 void ZephyrHal::spiEnd() {
