@@ -5,24 +5,24 @@
  * @file ZephyrHal.h
  * @brief RadioLib hardware abstraction layer for Zephyr RTOS.
  *
- * Bridges RadioLib's platform-independent C++ API to Zephyr's GPIO and SPI
- * drivers. Designed for nRF52840 but should work on any Zephyr-supported SoC
+ * bridges RadioLib's platform-independent C++ API to Zephyr's GPIO and SPI
+ * drivers. designed for nRF52840 but should work on any Zephyr-supported SoC
  * with SPI and GPIO peripherals.
  *
- * @par Key design decisions:
- * - **Raw GPIO levels**: Uses gpio_pin_set_raw/gpio_pin_get_raw to bypass
+ * @par key design decisions:
+ * - **raw GPIO levels**: uses gpio_pin_set_raw/gpio_pin_get_raw to bypass
  *   DTS GPIO_ACTIVE_LOW flags. RadioLib manages CS/reset/DIO polarity
  *   internally; applying active-low inversion would break signaling.
- * - **Manual CS**: The SPI chip select is stripped from spi_config and
+ * - **manual CS**: the SPI chip select is stripped from spi_config and
  *   delegated to RadioLib's own digitalWrite calls.
- * - **Multi-instance safe**: Interrupt dispatch uses CONTAINER_OF on
- *   per-pin irq structs — no global singleton required. Uses Zephyr's
+ * - **multi-instance safe**: interrupt dispatch uses CONTAINER_OF on
+ *   per-pin irq structs — no global singleton required. uses Zephyr's
  *   native NULL-buffer support for dummy SPI transfers to avoid race conditions
  *   and save RAM.
- * - **Pin mapping**: Zephyr gpio_dt_spec pointers are registered via addPin()
+ * - **pin mapping**: Zephyr gpio_dt_spec pointers are registered via addPin()
  *   and accessed by logical index. RadioLib sees sequential pin IDs (0, 1, 2...).
  *
- * @par Tested with:
+ * @par tested with:
  * - SX1262 on Heltec Mesh Node T114 (nRF52840)
  * - nRF Connect SDK v3.5.99-ncs1 / Zephyr RTOS
  */
@@ -45,32 +45,32 @@
 /** @brief RadioLib interrupt edge: falling */
 #define HAL_PIN_FALLING 2
 
-/** @brief Maximum number of GPIO pins that can be registered with the HAL */
+/** @brief maximum number of GPIO pins that can be registered with the HAL */
 #define MAX_HAL_PINS 20
 
 /**
- * @brief Per-pin interrupt context.
+ * @brief per-pin interrupt context.
  *
- * Embeds the Zephyr gpio_callback and the RadioLib callback pointer so the
- * ISR can dispatch without a global singleton. The ISR uses CONTAINER_OF
+ * embeds the Zephyr gpio_callback and the RadioLib callback pointer so the
+ * ISR can dispatch without a global singleton. the ISR uses CONTAINER_OF
  * to recover this struct from the gpio_callback pointer.
  */
 struct zephyr_hal_pin_irq {
-  struct gpio_callback cb;    /**< Zephyr GPIO callback struct */
-  void (*fn)(void);           /**< RadioLib interrupt callback */
+  struct gpio_callback cb;    /**< zephyr GPIO callback struct */
+  void (*fn)(void);           /**< radioLib interrupt callback */
 };
 
 /**
- * @brief RadioLib HAL implementation for Zephyr RTOS.
+ * @brief radioLib HAL implementation for Zephyr RTOS.
  *
- * Implements all required RadioLibHal virtual methods: GPIO, SPI, timing,
- * and interrupts. Multiple instances are supported for multi-radio boards.
+ * implements all required RadioLibHal virtual methods: GPIO, SPI, timing,
+ * and interrupts. multiple instances are supported for multi-radio boards.
  */
 class ZephyrHal : public RadioLibHal {
   public:
     /**
-     * @brief Construct a new ZephyrHal.
-     * @param spi_dev Zephyr SPI device (from DEVICE_DT_GET).
+     * @brief construct a new ZephyrHal.
+     * @param spi_dev zephyr SPI device (from DEVICE_DT_GET).
      * @param spi_cfg SPI configuration. CS is cloned and stripped internally;
      *                RadioLib manages CS via its own digitalWrite calls.
      */
@@ -78,10 +78,10 @@ class ZephyrHal : public RadioLibHal {
     ~ZephyrHal();
 
     /**
-     * @brief Register a GPIO pin with the HAL.
-     * @param dt_spec Pointer to a Zephyr gpio_dt_spec (must remain valid for
+     * @brief register a GPIO pin with the HAL.
+     * @param dt_spec pointer to a Zephyr gpio_dt_spec (must remain valid for
      *                the lifetime of the HAL — typically a static DTS macro).
-     * @return Logical pin ID (0, 1, 2...) to pass to RadioLib, or RADIOLIB_NC
+     * @return logical pin ID (0, 1, 2...) to pass to RadioLib, or RADIOLIB_NC
      *         on error (max pins exceeded or GPIO not ready).
      */
     uint32_t addPin(const struct gpio_dt_spec* dt_spec);
@@ -105,19 +105,19 @@ class ZephyrHal : public RadioLibHal {
     void delayMicroseconds(RadioLibTime_t us) override;
     RadioLibTime_t millis() override;
     /**
-     * @note Resolution is tied to the Zephyr system tick rate
+     * @note resolution is tied to the Zephyr system tick rate
      *       (e.g., 30.5 µs if CONFIG_SYS_CLOCK_TICKS_PER_SEC=32768).
      */
     RadioLibTime_t micros() override;
     ///@}
 
     /**
-     * @brief Measure pulse width on a pin.
-     * @note Busy-waits on digitalRead. SX126x does not use this method.
+     * @brief measure pulse width on a pin.
+     * @note busy-waits on digitalRead. SX126x does not use this method.
      */
     long pulseIn(uint32_t pin, uint32_t state, RadioLibTime_t timeout) override;
 
-    /** @brief Yield the current thread (calls k_yield). */
+    /** @brief yield the current thread (calls k_yield). */
     void yield() override;
 
     /** @name SPI Methods
@@ -142,10 +142,10 @@ class ZephyrHal : public RadioLibHal {
     uint32_t _pin_count = 0;
 
     /**
-     * @brief Look up a GPIO spec by logical pin ID.
-     * @return Pointer to gpio_dt_spec, or nullptr if pin ID is out of range.
+     * @brief look up a GPIO spec by logical pin ID.
+     * @return pointer to gpio_dt_spec, or RADIOLIB_NC if pin ID is out of range.
      */
-    const struct gpio_dt_spec * getGpio(uint32_t pin) const;
+    const struct gpio_dt_spec* getGpio(uint32_t pin) const;
 };
 
 #endif // ZEPHYR_HAL_H

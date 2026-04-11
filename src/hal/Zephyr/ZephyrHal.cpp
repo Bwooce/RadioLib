@@ -3,11 +3,11 @@
 
 LOG_MODULE_REGISTER(ZephyrHal, LOG_LEVEL_DBG);
 
-/*
- * GPIO ISR — recovers the per-pin irq context via CONTAINER_OF,
- * then calls the RadioLib callback. No global singleton needed.
- */
+// gpio ISR — recovers the per-pin irq context via CONTAINER_OF,
+// then calls the RadioLib callback. No global singleton needed.
 static void zephyr_gpio_isr(const struct device* dev, struct gpio_callback* cb, uint32_t pins) {
+  (void)dev;
+  (void)pins;
   struct zephyr_hal_pin_irq* irq = CONTAINER_OF(cb, struct zephyr_hal_pin_irq, cb);
   if(irq->fn != nullptr) {
     irq->fn();
@@ -20,12 +20,12 @@ ZephyrHal::ZephyrHal(const struct device* spi_dev, struct spi_config* spi_cfg)
 
   k_mutex_init(&_spi_mutex);
 
-  /* Clone the SPI config so we can strip CS — RadioLib manages CS
-   * manually via its own digitalWrite calls. */
+  // clone the SPI config so we can strip CS — RadioLib manages CS
+  // manually via its own digitalWrite calls.
   _spi_cfg = *spi_cfg;
   _spi_cfg.cs.gpio.port = nullptr;
 
-  for(int i = 0; i < MAX_HAL_PINS; i++) {
+  for(uint32_t i = 0; i < MAX_HAL_PINS; i++) {
     _pins[i] = nullptr;
     _irqs[i].fn = nullptr;
   }
@@ -35,7 +35,7 @@ ZephyrHal::~ZephyrHal() {
 }
 
 uint32_t ZephyrHal::addPin(const struct gpio_dt_spec* dt_spec) {
-  // Check for existing registration to prevent array exhaustion
+  // check for existing registration to prevent array exhaustion
   for(uint32_t i = 0; i < _pin_count; i++) {
     if(_pins[i]->port == dt_spec->port && _pins[i]->pin == dt_spec->pin) {
       return i;
@@ -69,15 +69,13 @@ void ZephyrHal::pinMode(uint32_t pin, uint32_t mode) {
     return;
   }
 
-  /*
-   * Use gpio_pin_configure (not _dt) to avoid applying DTS active-low flags.
-   * RadioLib expects raw physical pin levels — it handles CS/reset polarity
-   * internally. Applying GPIO_ACTIVE_LOW would invert the logic and break
-   * SPI chip select and reset signaling.
-   */
+  // use gpio_pin_configure (not _dt) to avoid applying DTS active-low flags.
+  // RadioLib expects raw physical pin levels — it handles CS/reset polarity
+  // internally. Applying GPIO_ACTIVE_LOW would invert the logic and break
+  // SPI chip select and reset signaling.
   gpio_flags_t dir = (mode == HAL_PIN_OUTPUT) ? GPIO_OUTPUT : GPIO_INPUT;
 
-  // Preserve pull-up/pull-down flags defined in the devicetree overlay
+  // preserve pull-up/pull-down flags defined in the devicetree overlay
   dir |= (dt->dt_flags & (GPIO_PULL_UP | GPIO_PULL_DOWN));
 
   gpio_pin_configure(dt->port, dt->pin, dir);
@@ -89,7 +87,7 @@ void ZephyrHal::digitalWrite(uint32_t pin, uint32_t value) {
     return;
   }
 
-  /* Raw physical level — RadioLib manages polarity internally */
+  // raw physical level — RadioLib manages polarity internally
   gpio_pin_set_raw(dt->port, dt->pin, value == HAL_PIN_HIGH ? 1 : 0);
 }
 
@@ -99,7 +97,7 @@ uint32_t ZephyrHal::digitalRead(uint32_t pin) {
     return HAL_PIN_LOW;
   }
 
-  /* Raw physical level — RadioLib manages polarity internally */
+  // raw physical level — RadioLib manages polarity internally
   return gpio_pin_get_raw(dt->port, dt->pin) > 0 ? HAL_PIN_HIGH : HAL_PIN_LOW;
 }
 
@@ -118,7 +116,7 @@ void ZephyrHal::attachInterrupt(uint32_t interruptNum, void (*interruptCb)(void)
     flags = GPIO_INT_EDGE_BOTH;
   }
 
-  // Unregister any previous interrupt on this pin
+  // unregister any previous interrupt on this pin
   if(_irqs[interruptNum].fn != nullptr) {
     gpio_pin_interrupt_configure(dt->port, dt->pin, GPIO_INT_DISABLE);
     gpio_remove_callback(dt->port, &_irqs[interruptNum].cb);
@@ -195,11 +193,9 @@ void ZephyrHal::spiBeginTransaction() {
 }
 
 void ZephyrHal::spiTransfer(uint8_t* out, size_t len, uint8_t* in) {
-  /*
-   * In Zephyr, passing NULL to spi_buf.buf natively instructs the driver
-   * to send dummy bytes (0x00) or discard RX data. This avoids race
-   * conditions with static buffers in multi-threaded environments.
-   */
+  // in Zephyr, passing NULL to spi_buf.buf natively instructs the driver
+  // to send dummy bytes (0x00) or discard RX data. This avoids race
+  // conditions with static buffers in multi-threaded environments.
   const struct spi_buf tx_buf = { .buf = out, .len = len };
   const struct spi_buf_set tx = { .buffers = &tx_buf, .count = 1 };
 

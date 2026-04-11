@@ -2,16 +2,16 @@
 #include <RadioLib.h>
 #include "hal/Zephyr/ZephyrHal.h"
 
-// Define DTS macros
+// define DTS macros
 #define SPI_DEV DEVICE_DT_GET(DT_NODELABEL(spi1))
 
-// Define GPIO specs from devicetree
+// define GPIO specs from devicetree
 static const struct gpio_dt_spec cs_gpio = GPIO_DT_SPEC_GET(DT_NODELABEL(radio_cs), gpios);
 static const struct gpio_dt_spec irq_gpio = GPIO_DT_SPEC_GET(DT_NODELABEL(radio_irq), gpios);
 static const struct gpio_dt_spec rst_gpio = GPIO_DT_SPEC_GET(DT_NODELABEL(radio_rst), gpios);
 static const struct gpio_dt_spec busy_gpio = GPIO_DT_SPEC_GET(DT_NODELABEL(radio_busy), gpios);
 
-// Zephyr SPI config
+// zephyr SPI config
 static struct spi_config spi_cfg = {
   .frequency = 8000000,
   .operation = SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | SPI_TRANSFER_MSB,
@@ -30,10 +30,10 @@ int main(void) {
     return -1;
   }
 
-  // Initialize HAL on the stack to avoid RTOS heap usage
+  // initialize HAL on the stack to avoid RTOS heap usage
   ZephyrHal hal(SPI_DEV, &spi_cfg);
 
-  // Register pins with the HAL
+  // register pins with the HAL
   uint32_t cs_pin = hal.addPin(&cs_gpio);
   uint32_t irq_pin = hal.addPin(&irq_gpio);
   uint32_t rst_pin = hal.addPin(&rst_gpio);
@@ -44,7 +44,7 @@ int main(void) {
     return -1;
   }
 
-  // Create the radio module on the stack
+  // create the radio module on the stack
   Module mod(&hal, cs_pin, irq_pin, rst_pin, busy_pin);
   SX1262 radio(&mod);
 
@@ -58,7 +58,7 @@ int main(void) {
     return -1;
   }
 
-  // Main loop
+  // main loop
   while(true) {
     printk("Transmitting packet...\n");
     state = radio.transmit("Hello from Zephyr!");
