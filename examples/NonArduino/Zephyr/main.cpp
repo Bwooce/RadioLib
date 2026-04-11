@@ -3,7 +3,7 @@
 #include "hal/Zephyr/ZephyrHal.h"
 
 // Define DTS macros
-#define SPI_DEV DEVICE_DT_GET(DT_NODELABEL(radio_spi))
+#define SPI_DEV DEVICE_DT_GET(DT_NODELABEL(spi1))
 
 // Define GPIO specs from devicetree
 static const struct gpio_dt_spec cs_gpio = GPIO_DT_SPEC_GET(DT_NODELABEL(radio_cs), gpios);
@@ -22,10 +22,6 @@ static struct spi_config spi_cfg = {
     }
 };
 
-// Global HAL and Radio instances
-ZephyrHal* hal = nullptr;
-SX1262* radio = nullptr;
-
 int main(void) {
     printk("Starting RadioLib Zephyr Example\n");
 
@@ -35,8 +31,7 @@ int main(void) {
     }
 
     // Initialize HAL
-    hal = new ZephyrHal(SPI_DEV, &spi_cfg);
-    radio = new SX1262(hal);
+    ZephyrHal* hal = new ZephyrHal(SPI_DEV, &spi_cfg);
 
     // Register pins with the HAL
     uint32_t cs_pin = hal->addPin(&cs_gpio);
@@ -49,8 +44,11 @@ int main(void) {
         return -1;
     }
 
+    // Create the radio module
+    SX1262 radio = new Module(hal, cs_pin, irq_pin, rst_pin, busy_pin);
+
     printk("Initializing SX1262...\n");
-    int state = radio->begin(cs_pin, irq_pin, rst_pin, busy_pin);
+    int state = radio.begin();
 
     if (state == RADIOLIB_ERR_NONE) {
         printk("SX1262 init success!\n");
@@ -62,7 +60,7 @@ int main(void) {
     // Main loop
     while (true) {
         printk("Transmitting packet...\n");
-        state = radio->transmit("Hello from Zephyr!");
+        state = radio.transmit("Hello from Zephyr!");
 
         if (state == RADIOLIB_ERR_NONE) {
             printk("Transmit success!\n");
