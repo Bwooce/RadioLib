@@ -7,8 +7,12 @@ This directory contains a standalone example demonstrating how to use RadioLib o
 - A supported hardware board (e.g., `nrf52840dk_nrf52840` or a custom board).
 
 ## Configuration
-The provided `app.overlay` contains dummy GPIO and SPI pins. **You must edit `app.overlay`** to match the actual wiring of your LoRa module to your board.
+Zephyr uses Devicetree overlays to map physical hardware to the application.
+Because pin assignments vary wildly between different microcontrollers, **you must create a board-specific overlay** to match the actual wiring of your LoRa module.
 
+Example overlays are provided in the `boards/` directory. For example, if compiling for the `nrf52840dk_nrf52840`, Zephyr will automatically load the `boards/nrf52840dk_nrf52840.overlay` file.
+
+Your overlay must define the following aliases and nodes:
 - `radio_cs`: SPI Chip Select
 - `radio_irq`: DIO1 / Interrupt pin
 - `radio_rst`: Reset pin
