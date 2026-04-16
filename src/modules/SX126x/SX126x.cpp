@@ -1271,6 +1271,11 @@ int16_t SX126x::calibrateImage(float freq) {
   } else if((freqBand >= 430) && (freqBand <= 440)) {
     data[0] = RADIOLIB_SX126X_CAL_IMG_430_MHZ_1;
     data[1] = RADIOLIB_SX126X_CAL_IMG_430_MHZ_2;
+  } else if((freqBand >= 398) && (freqBand <= 415)) {
+    // 400 MHz band (TinyGS satellites: Tianqi, FossaSat, etc.)
+    // Not in Semtech predefined ranges but within SX1262 capability
+    data[0] = 0x63;  // floor((398-1)/4) = 99
+    data[1] = 0x69;  // ceil((415+1)/4) = 104+1 = 105
   }
 
   int16_t state;
