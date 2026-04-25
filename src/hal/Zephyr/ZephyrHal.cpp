@@ -24,6 +24,12 @@ ZephyrHal::ZephyrHal(const struct device* spi_dev, struct spi_config* spi_cfg)
   // manually via its own digitalWrite calls.
   _spi_cfg = *spi_cfg;
   _spi_cfg.cs.gpio.port = nullptr;
+  // Zephyr v3.4+ added a cs.cs_is_gpio flag; the SPI driver checks THAT
+  // (not whether cs.gpio.port is NULL) to decide whether to drive CS via
+  // gpio_pin_set_dt(). If we leave cs_is_gpio set but null the port,
+  // _spi_context_cs_control() calls gpio_pin_set_dt() on a NULL device
+  // and HardFaults dereferencing port->api.
+  _spi_cfg.cs.cs_is_gpio = false;
 
   for(uint32_t i = 0; i < MAX_HAL_PINS; i++) {
     _pins[i] = nullptr;
